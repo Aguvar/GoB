@@ -57,41 +57,43 @@ def material_fromm_texture(mat, diff_texture=None, norm_texture=None, disp_textu
         mat.node_tree.links.new(shader_node.inputs[0], diff_texture_node.outputs[0])
 
     # create the Normal Map nodes   
-    norm_node = nodes.get('Normal Map')     # ShaderNodeNormalMap Normal Map     
-    if not norm_node:
-        norm_node = nodes.new('ShaderNodeNormalMap')
-        norm_node.location = -300, -100  
-    if bpy.app.version < (3,1,0):
-        mat.node_tree.links.new(shader_node.inputs[20], norm_node.outputs[0])
-    else:
-        mat.node_tree.links.new(shader_node.inputs[22], norm_node.outputs[0])
+    if norm_texture:
+        norm_node = nodes.get('Normal Map')     # ShaderNodeNormalMap Normal Map     
+        if not norm_node:
+            norm_node = nodes.new('ShaderNodeNormalMap')
+            norm_node.location = -300, -100  
+        if bpy.app.version < (3,1,0):
+            mat.node_tree.links.new(shader_node.inputs[20], norm_node.outputs[0])
+        else:
+            mat.node_tree.links.new(shader_node.inputs[22], norm_node.outputs[0])
 
-    norm_texture_node = None 
-    if 'Normal Map' not in node_cache:   
-        norm_texture_node = nodes.new('ShaderNodeTexImage')
-        norm_texture_node.location = -700, -100  
-        norm_texture_node.image = norm_texture
-        norm_texture_node.label = 'Normal Map'          
-        if norm_texture:
+        norm_texture_node = None 
+        if 'Normal Map' not in node_cache:   
+            norm_texture_node = nodes.new('ShaderNodeTexImage')
+            norm_texture_node.location = -700, -100  
+            norm_texture_node.image = norm_texture
+            norm_texture_node.label = 'Normal Map'          
+            
             norm_texture_node.image.colorspace_settings.name = utils.prefs().import_normal_colorspace
-        mat.node_tree.links.new(norm_node.inputs[1], norm_texture_node.outputs[0])
+            mat.node_tree.links.new(norm_node.inputs[1], norm_texture_node.outputs[0])
 
     # create the Displacement nodes   
-    disp_node = nodes.get('Displacement')   # ShaderNodeDisplacement Displacement       
-    if not disp_node:
-        disp_node = nodes.new('ShaderNodeDisplacement')
-        disp_node.location = -300, 200  
-    mat.node_tree.links.new(output_node.inputs[2], disp_node.outputs[0])
+    if disp_texture:
+        disp_node = nodes.get('Displacement')   # ShaderNodeDisplacement Displacement       
+        if not disp_node:
+            disp_node = nodes.new('ShaderNodeDisplacement')
+            disp_node.location = -300, 200  
+        mat.node_tree.links.new(output_node.inputs[2], disp_node.outputs[0])
 
-    disp_texture_node = None                
-    if 'Displacement Map' not in node_cache:     
-        disp_texture_node = nodes.new('ShaderNodeTexImage')
-        disp_texture_node.location = -700, 200  
-        disp_texture_node.image = disp_texture
-        disp_texture_node.label = 'Displacement Map'
-        if disp_texture:
+        disp_texture_node = None                
+        if 'Displacement Map' not in node_cache:     
+            disp_texture_node = nodes.new('ShaderNodeTexImage')
+            disp_texture_node.location = -700, 200  
+            disp_texture_node.image = disp_texture
+            disp_texture_node.label = 'Displacement Map'
+            
             disp_texture_node.image.colorspace_settings.name = utils.prefs().import_displace_colorspace
-        mat.node_tree.links.new(disp_node.inputs[0], disp_texture_node.outputs[0])
+            mat.node_tree.links.new(disp_node.inputs[0], disp_texture_node.outputs[0])
     
 
 def materail_from_polypaint(mat):
