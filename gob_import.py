@@ -186,6 +186,42 @@ class GoB_OT_import(Operator):
             and np.array_equal(mesh_loop_vertices, imported_loop_vertices)
         )
 
+    @staticmethod
+    def _ensure_object_in_view_layer(obj: bpy.types.Object) -> None:
+        """Link an existing object into the active view layer without moving it."""
+
+        view_layer = bpy.context.view_layer
+        if obj.name in view_layer.objects:
+            return
+
+        scene_collection = bpy.context.scene.collection
+        target_collections = []
+        active_layer_collection = view_layer.active_layer_collection
+        if active_layer_collection is not None:
+            target_collections.append(active_layer_collection.collection)
+        if scene_collection not in target_collections:
+            target_collections.append(scene_collection)
+
+        link_error = None
+        for collection in target_collections:
+            try:
+                if obj.name not in collection.objects:
+                    collection.objects.link(obj)
+            except (RuntimeError, TypeError) as error:
+                # A linked or otherwise read-only active collection may reject
+                # changes. The local scene collection remains a safe fallback.
+                link_error = error
+                continue
+
+            view_layer.update()
+            if obj.name in view_layer.objects:
+                return
+
+        raise RuntimeError(
+            f"GoB: '{obj.name}' could not be linked to view layer "
+            f"'{view_layer.name}'."
+        ) from link_error
+
     def make_mesh(self, objName, vertsData, facesData) -> tuple:
         """Create or update a mesh object from the given vertices and faces data.
 
@@ -260,7 +296,10 @@ class GoB_OT_import(Operator):
         me.transform(obj.matrix_world.inverted())
         me.validate(verbose=utils.prefs().debug_output)
 
-        # Set object as active and update view layer
+        # Existing objects may be orphaned or belong only to an excluded
+        # collection. Link them to a visible collection before selecting them,
+        # while preserving all of their existing collection memberships.
+        self._ensure_object_in_view_layer(obj)
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
         bpy.context.view_layer.update()
